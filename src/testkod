@@ -1,0 +1,154 @@
+To test your NoteApp class using JUnit, we need to write unit tests that validate the key methods (addNote, removeNote, editNote, displayNotes). Since the main logic resides within these methods and relies on a static list (notes) and user input (scanner), we can refactor the code slightly for testability. Specifically, we should make the list of notes a non-static field and remove the reliance on scanner in methods like addNote, removeNote, etc.
+
+Here’s how you could refactor the NoteApp class slightly to make it more testable:
+
+Refactoring for Testability
+
+
+
+import java.util.ArrayList;
+import java.util.List;
+
+public class NoteApp {
+    private List<Note> notes;
+
+    public NoteApp() {
+        this.notes = new ArrayList<>();
+    }
+
+    public void addNote(String title, String content) {
+        if (title != null && !title.isEmpty() && content != null && !content.isEmpty()) {
+            notes.add(new Note(title, content));
+        }
+    }
+
+    public void removeNoteByIndex(int index) {
+        if (index >= 0 && index < notes.size()) {
+            notes.remove(index);
+        }
+    }
+
+    public void editNoteByIndex(int index, String newTitle, String newContent) {
+        if (index >= 0 && index < notes.size()) {
+            Note note = notes.get(index);
+            if (newTitle != null && !newTitle.isEmpty()) {
+                note.setTitle(newTitle);
+            }
+            if (newContent != null && !newContent.isEmpty()) {
+                note.setContent(newContent);
+            }
+        }
+    }
+
+    public List<Note> getNotes() {
+        return notes;
+    }
+}
+
+
+JUnit Test for NoteApp
+Here’s a simple JUnit 5 test class to test the core functionality of NoteApp:
+
+
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
+
+class NoteAppTest {
+
+    private NoteApp noteApp;
+
+    @BeforeEach
+    void setUp() {
+        noteApp = new NoteApp(); // Create a fresh instance before each test
+    }
+
+    @Test
+    void testAddNote() {
+        // Adding a note
+        noteApp.addNote("Title 1", "Content 1");
+        assertEquals(1, noteApp.getNotes().size(), "Note list should have 1 note");
+        
+        // Validate the added note
+        Note note = noteApp.getNotes().get(0);
+        assertEquals("Title 1", note.getTitle(), "Note title should be 'Title 1'");
+        assertEquals("Content 1", note.getContent(), "Note content should be 'Content 1'");
+    }
+
+    @Test
+    void testRemoveNote() {
+        // Adding multiple notes
+        noteApp.addNote("Title 1", "Content 1");
+        noteApp.addNote("Title 2", "Content 2");
+        assertEquals(2, noteApp.getNotes().size(), "Note list should have 2 notes");
+
+        // Removing a note by index
+        noteApp.removeNoteByIndex(0);
+        assertEquals(1, noteApp.getNotes().size(), "Note list should have 1 note after removal");
+
+        // Validate remaining note
+        Note note = noteApp.getNotes().get(0);
+        assertEquals("Title 2", note.getTitle(), "Remaining note should be 'Title 2'");
+    }
+
+    @Test
+    void testEditNote() {
+        // Adding a note to edit
+        noteApp.addNote("Old Title", "Old Content");
+
+        // Edit the note
+        noteApp.editNoteByIndex(0, "New Title", "New Content");
+
+        // Validate the updated note
+        Note note = noteApp.getNotes().get(0);
+        assertEquals("New Title", note.getTitle(), "Note title should be updated to 'New Title'");
+        assertEquals("New Content", note.getContent(), "Note content should be updated to 'New Content'");
+    }
+
+    @Test
+    void testEditNotePartial() {
+        // Adding a note to partially edit
+        noteApp.addNote("Old Title", "Old Content");
+
+        // Edit only the content
+        noteApp.editNoteByIndex(0, null, "New Content");
+
+        // Validate that only the content changed
+        Note note = noteApp.getNotes().get(0);
+        assertEquals("Old Title", note.getTitle(), "Note title should remain 'Old Title'");
+        assertEquals("New Content", note.getContent(), "Note content should be updated to 'New Content'");
+    }
+
+    @Test
+    void testInvalidRemoveIndex() {
+        // Adding a note
+        noteApp.addNote("Title 1", "Content 1");
+
+        // Try to remove with invalid index
+        noteApp.removeNoteByIndex(5); // Index out of bounds
+
+        // Validate the note was not removed
+        assertEquals(1, noteApp.getNotes().size(), "Note should not be removed with invalid index");
+    }
+
+    @Test
+    void testInvalidEditIndex() {
+        // Try to edit a non-existent note
+        noteApp.editNoteByIndex(5, "New Title", "New Content"); // Invalid index
+
+        // Validate no notes were modified
+        assertTrue(noteApp.getNotes().isEmpty(), "No notes should be modified with invalid index");
+    }
+}
+
+
+Explanation of Tests:
+testAddNote: Tests that a note can be added successfully and validates the title and content.
+testRemoveNote: Tests that a note can be removed by index and ensures the correct note remains.
+testEditNote: Tests that a note can be edited fully (title and content).
+testEditNotePartial: Tests partial editing, ensuring the title remains unchanged when only content is edited.
+testInvalidRemoveIndex: Tests that nothing happens when trying to remove a note with an invalid index.
+testInvalidEditIndex: Tests that editing with an invalid index does not affect any notes.
+Running the Tests:
+You can run these JUnit tests in any IDE that supports JUnit (e.g., IntelliJ IDEA, Eclipse) or through Maven/Gradle in a continuous integration setup. Each test ensures that the core functionalities of the NoteApp class are working as expected.
